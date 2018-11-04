@@ -1,0 +1,28 @@
+@charset "UTF-8";
+
+body {
+    display: flex;
+    margin-top: 2em;
+    user-select: none;
+    background-color: rgb(58, 65, 54);
+}
+
+.controller-thumb {
+    background: gray;
+    box-shadow: black 0 0 5px 1px;
+}
+
+.controller-container {
+    margin: 2em;
+    background: #ffffff;
+}
+
+.controller-container:last-of-type {
+    margin-left: auto;
+}
+
+.controller-thumb,
+.controller-container {
+    border-radius: 10px;
+}
+

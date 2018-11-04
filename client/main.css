@@ -1,0 +1,19 @@
+@charset "UTF-8";
+
+body {
+    margin: 0;
+    user-select: none;
+    background-color: rgb(58, 65, 54);
+}
+
+canvas {
+    display: flex;
+    margin: auto;
+    border: 1px solid black;
+}
+
+#controllerContainer {
+    position: fixed;
+    top: 3em;
+    right: 0;
+}
