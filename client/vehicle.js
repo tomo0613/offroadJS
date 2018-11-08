@@ -71,11 +71,13 @@ export default function createVehicle(world, meshes) {
     });
 
     // Update wheels
+    let transform;
+    let wheelBody;
     world.addEventListener('postStep', () => {
         for (let i = 0; i < vehicle.wheelInfos.length; i++) {
             vehicle.updateWheelTransform(i);
-            const transform = vehicle.wheelInfos[i].worldTransform;
-            const wheelBody = wheelBodies[i];
+            transform = vehicle.wheelInfos[i].worldTransform;
+            wheelBody = wheelBodies[i];
 
             wheelBody.position.copy(transform.position);
             wheelBody.quaternion.copy(transform.quaternion);

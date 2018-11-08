@@ -1,6 +1,8 @@
 export {
     loadResource,
     sliceCubeTexture,
+    debounce,
+    throttle,
 };
 
 function loadResource(url) {
@@ -30,7 +32,7 @@ function loadResource(url) {
     });
 }
 
-const sliceCubeTexture = (img, imgSize = 1024) => {
+function sliceCubeTexture(img, imgSize = 1024) {
     const cubeTextureMap = [
         {x: 2, y: 1},
         {x: 0, y: 1},
@@ -50,4 +52,39 @@ const sliceCubeTexture = (img, imgSize = 1024) => {
 
         return canvas;
     }
+}
+
+function debounce(fnc, delay = 200, immediate = false) {
+    let timeoutId;
+
+    return (...args) => {
+        if (immediate && !timeoutId) {
+            fnc(...args);
+        }
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fnc(...args), delay);
+    };
+};
+
+function throttle(fnc, timeToWaitBeforeNextCall = 200) {
+    let timeoutId;
+    let prevCallTime;
+    let now;
+    let nextScheduledCallTime;
+
+    return (...args) => {
+        nextScheduledCallTime = prevCallTime + timeToWaitBeforeNextCall;
+        now = performance.now();
+
+        if (!prevCallTime || now > nextScheduledCallTime) {
+            fnc(...args);
+            prevCallTime = now;
+        } else {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                fnc(...args);
+                prevCallTime = now;
+            }, timeToWaitBeforeNextCall - (now - prevCallTime));
+        }
+    };
 };
