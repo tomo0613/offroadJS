@@ -11,7 +11,7 @@ export default function createVehicle(world, meshes) {
     });
     world.addContactMaterial(wheelGroundContactMaterial);
 
-    const chassisBody = new CANNON.Body({mass: 20});
+    const chassisBody = new CANNON.Body({mass: Config.vehicle.mass});
     const chassisBaseShape = new CANNON.Box(new CANNON.Vec3(0.9, 0.4, 2.1));
     const chassisTopShape = new CANNON.Box(new CANNON.Vec3(0.9, 0.4, 1.2));
     chassisBody
@@ -157,13 +157,22 @@ function initControls(vehicle) {
     const maxForce = 30;
     const brakeForce = 1;
 
+    const liftingPoint = new CANNON.Vec3();
+    const liftingForce = new CANNON.Vec3(0, 360, 0);
+    const upAxis = new CANNON.Vec3(0, 1, 0);
+
     onkeydown = onkeyup = (e) => {
         preventPageScrolling(e);
         if (isKeyDown('h')) {
-            // ToDo
-            // const raiseForce = new CANNON.Vec3(0, 300, 0);
-            // const chassisTop = vehicle.chassisBody.position.vadd(new CANNON.Vec3(0, -1, 0));
-            // vehicle.chassisBody.applyLocalForce(raiseForce, chassisTop);
+            vehicle.chassisBody.quaternion.vmult(upAxis, liftingPoint);
+            vehicle.chassisBody.position.vadd(liftingPoint, liftingPoint);
+            vehicle.chassisBody.applyForce(liftingForce, liftingPoint);
+
+            vehicle.chassisBody.angularDamping = 0.9;
+            vehicle.chassisBody.linearDamping = 0.9;
+        } else {
+            vehicle.chassisBody.angularDamping = 0.01;
+            vehicle.chassisBody.linearDamping = 0.01;
         }
 
         if (e.type === 'keydown' && e.repeat) {

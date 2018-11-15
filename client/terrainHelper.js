@@ -23,9 +23,10 @@ const heightMap = [
 ];
 
 export function generateTerrain() {
+    const scaledHeightMap = heightMap.map(row => row.map(heightValue => heightValue * 0.5));
     const mapRows = heightMap.length;
     const mapColumns = heightMap[0].length;
-    const terrainShape = new CANNON.Heightfield(heightMap, {elementSize: 10});
+    const terrainShape = new CANNON.Heightfield(scaledHeightMap, {elementSize: 5});
     const terrain = new CANNON.Body({mass: 0, shape: terrainShape});
 
     terrain.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);

@@ -1,4 +1,3 @@
-import constants from './constants.js';
 import createVehicle from './vehicle.js';
 import * as utils from './utils.js';
 import {generateTerrain, heightFieldToMesh} from './terrainHelper.js';
@@ -14,18 +13,15 @@ const gScene = new THREE.Scene();
 const gRenderer = new THREE.WebGLRenderer();
 // const gCannonDebugRenderer = new THREE.CannonDebugRenderer(gScene, gWorld);
 const gCamera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 1000);
-const gCameraController = new THREE.OrbitControls(gCamera, gRenderer.domElement);
 gRenderer.gammaOutput = true;
-// sh gRenderer.shadowMap.enabled = true;
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 const sunLight = new THREE.DirectionalLight(0xf5f4d3, 0.9);
-sunLight.position.set(-1, 0.5, -1).normalize();
-// sh sunLight.castShadow = true; 
+sunLight.position.set(-1, 100, -1).normalize();
 gScene.add(ambientLight);
 gScene.add(sunLight);
 
-gWorld.gravity.set(...constants.gravity);
+gWorld.gravity.set(...Config.world.gravity);
 gWorld.broadphase = new CANNON.SAPBroadphase(gWorld);
 
 gRenderer.setSize(viewWidth, viewHeight);
@@ -47,8 +43,6 @@ document.body.appendChild(gRenderer.domElement);
 
     setMaterials(wheel, chassis);
     chassis.scale.set(0.7, 0.7, 0.7);
-    // mesh.receiveShadow = options.receiveShadow;
-    // sh chassis.castShadow = true;
 
     const meshes = {
         wheel_front_r: wheel,
@@ -70,7 +64,7 @@ document.body.appendChild(gRenderer.domElement);
     });
     
     gWorld.addBody(terrain);
-    gScene.add(heightFieldToMesh(terrain/*, {receiveShadow: true}*/));
+    gScene.add(heightFieldToMesh(terrain));
     
     cameraHelper.init(gCamera, chassis);
 

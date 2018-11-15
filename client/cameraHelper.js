@@ -5,6 +5,8 @@ export const cameraHelper = {
 };
 
 function initCameraHelper(camera, target) {
+    const cameraController = new THREE.OrbitControls(camera/*, gRenderer.domElement*/);
+
     let cameraId = 0;
 
     cameraHelper.switch = () => {
@@ -59,24 +61,3 @@ function initChaseCamera(camera, target) {
         camera.lookAt(target.position);
     };
 }
-
-// const logLazy = utils.throttle((data) => console.log(data), 1000);
-// const cameraTargetPosition = new THREE.Vector3();
-// const cameraOffset = new THREE.Vector3();
-// function updateChaseCamera() {
-    // cameraOffset.set(0, 3, 15);
-    // rotationMatrix.makeRotationFromQuaternion(chs.quaternion);
-
-    // cameraOffset.applyMatrix4(rotationMatrix);
-    // logLazy(chs.velocity);
-    // cameraTargetPosition.copy(chs.velocity);
-
-    /**
-    if reverse alter cam offset
-        get heading (v3) from quaternion
-        
-    */
-
-    // gCamera.position.lerp(chs.velocity, 0.1);
-//     gCamera.lookAt(chs.position);
-// }
