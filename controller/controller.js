@@ -98,8 +98,6 @@ if (window.DeviceOrientationEvent) {
 
         currentRotation = value;
 
-        // console.log(currentRotation);
-
         sendSocketMessage({
             type: 'controls_from_controller',
             target: 'steeringValue',
