@@ -1,5 +1,3 @@
-import controllerSocketHandler from './socketHandler.js';
-
 export default function createVehicle(world, meshes) {
     world.defaultContactMaterial.friction = 0.001;
     const groundMaterial = new CANNON.Material('groundMaterial');
@@ -112,11 +110,6 @@ export default function createVehicle(world, meshes) {
         acceleration: 0,
         steeringValue: 0,
         brakeForce: 0,
-    };
-
-    controllerSocketHandler.connectToServer();
-    controllerSocketHandler.onmessage = (action) => {
-        setState({[action.target]: action.value});
     };
 
     function setState(properties) {
