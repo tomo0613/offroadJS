@@ -4,12 +4,43 @@ body {
     margin: 0;
     user-select: none;
     background-color: rgb(58, 65, 54);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body > aside {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 3px;
+    padding: 1em 5em;
+    top: 10vh;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+p {
+    margin: 0.7em 1em;
+}
+
+p > span {
+    display: inline-flex;
+    justify-content: center;
+    background: white;
+    border: 1px solid black;
+    border-radius: 3px;
+    padding: 0.1em;
+    min-width: 1.5em;
 }
 
 canvas {
     display: flex;
     margin: auto;
     border: 1px solid black;
+}
+
+.hidden {
+    display: none;
 }
 
 #controllerContainer {

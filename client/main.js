@@ -3,16 +3,15 @@ import * as utils from './utils.js';
 import {generateTerrain, heightFieldToMesh} from './terrainHelper.js';
 import {cameraHelper} from './cameraHelper.js';
 
-const viewWidth = 512;
-const viewHeight = 512;
-const aspectRatio = viewWidth / viewHeight;
 const worldStep = 1/60;
 
 const gWorld = new CANNON.World();
 const gScene = new THREE.Scene();
 const gRenderer = new THREE.WebGLRenderer();
-// const gCannonDebugRenderer = new THREE.CannonDebugRenderer(gScene, gWorld);
-const gCamera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 1000);
+const gCamera = new THREE.PerspectiveCamera(50, getAspectRatio(), 0.1, 1000);
+const gCannonDebugRenderer = new THREE.CannonDebugRenderer(gScene, gWorld);
+let wireFrameRenderer = null;
+let pause = false;
 gRenderer.gammaOutput = true;
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -24,7 +23,7 @@ gScene.add(sunLight);
 gWorld.gravity.set(...Config.world.gravity);
 gWorld.broadphase = new CANNON.SAPBroadphase(gWorld);
 
-gRenderer.setSize(viewWidth, viewHeight);
+gRenderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(gRenderer.domElement);
 
 (async function init() {
@@ -55,12 +54,12 @@ document.body.appendChild(gRenderer.domElement);
     const terrain = generateTerrain();
     const vehicle = createVehicle(gWorld, meshes);
     vehicle.chassisBody.position.y = 2;
-
-    Object.keys(meshes).forEach((name) => {
-        if (name.split('_')[2] === 'r') {
-            ['x', 'y', 'z'].forEach(axis => meshes[name].scale[axis] *= -1);
+    // mirror meshes suffixed with '_r'
+    Object.keys(meshes).forEach((meshName) => {
+        if (meshName.split('_')[2] === 'r') {
+            ['x', 'y', 'z'].forEach(axis => meshes[meshName].scale[axis] *= -1);
         }
-        gScene.add(meshes[name]);
+        gScene.add(meshes[meshName]);
     });
     
     gWorld.addBody(terrain);
@@ -75,14 +74,16 @@ function updatePhysics() {
     gWorld.step(worldStep);
 }
 
-function animate() {
-}
-
 function render() {
-    updatePhysics();
-    animate();
+    if (pause) {
+        return;
+    }
 
-    // gCannonDebugRenderer.update();
+    updatePhysics();
+
+    if (wireFrameRenderer) {
+        wireFrameRenderer.update();
+    }
 
     cameraHelper.update();
 
@@ -141,20 +142,47 @@ function setMaterials(wheel, chassis) {
     }
 }
 
-// function getAspectRatio() {
-//     return window.innerWidth / window.innerHeight;
-// }
+function getAspectRatio() {
+    return window.innerWidth / window.innerHeight;
+}
 
-// function windowResizeHandler() {
-//     gCamera.aspect = getAspectRatio();
-//     gCamera.updateProjectionMatrix();
-//     gRenderer.setSize(window.innerWidth, window.innerHeight);
-// }
+function windowResizeHandler() {
+    gCamera.aspect = getAspectRatio();
+    gCamera.updateProjectionMatrix();
+    gRenderer.setSize(window.innerWidth, window.innerHeight);
+}
 
-// window.onresize = utils.debounce(windowResizeHandler, 500);
+window.onresize = utils.debounce(windowResizeHandler, 500);
 
-addEventListener('keyup', (e) => {
-    if (e.key === 'c') {
-        cameraHelper.switch();
+let pressedKey;
+const instructions = document.getElementById('instructions');
+
+window.addEventListener('keyup', (e) => {
+    switch (e.key.toUpperCase()) {
+        case 'C':
+            cameraHelper.switch();
+            break;
+        case 'P':
+            pause = !pause;
+            if (pause) {
+                console.info('Pause');
+            } else {
+                render();
+            }
+            break;
+        case 'ESCAPE':
+            instructions.classList.toggle('hidden');
+            break;
     }
+});
+
+Object.defineProperty(window, 'showWireFrame', {
+    get() {
+        if (wireFrameRenderer) {
+            wireFrameRenderer.reset();
+            wireFrameRenderer = null;
+        } else {
+            wireFrameRenderer = gCannonDebugRenderer;
+        }
+    },
 });

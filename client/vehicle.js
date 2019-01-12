@@ -160,10 +160,12 @@ function initControls(vehicle) {
     const liftingPoint = new CANNON.Vec3();
     const liftingForce = new CANNON.Vec3(0, 360, 0);
     const upAxis = new CANNON.Vec3(0, 1, 0);
+    let pressedKey;
 
     onkeydown = onkeyup = (e) => {
+        pressedKey = e.key.toUpperCase();
         preventPageScrolling(e);
-        if (isKeyDown('h')) {
+        if (isKeyDown('H')) {
             vehicle.chassisBody.quaternion.vmult(upAxis, liftingPoint);
             vehicle.chassisBody.position.vadd(liftingPoint, liftingPoint);
             vehicle.chassisBody.applyForce(liftingForce, liftingPoint);
@@ -179,16 +181,16 @@ function initControls(vehicle) {
             return;
         }
         if (e.type === 'keyup') {
-            keysPressed.delete(e.key);
+            keysPressed.delete(pressedKey);
         } else {
-            keysPressed.add(e.key);
+            keysPressed.add(pressedKey);
         }
 
-        const accelerationMultiplier = isKeyDown('w') ? 1 : isKeyDown('s') ? -1 : 0;
+        const accelerationMultiplier = isKeyDown('W') ? 1 : isKeyDown('S') ? -1 : 0;
         [0, 1, 2, 3].forEach(wheelIndex => vehicle.applyEngineForce(maxForce * accelerationMultiplier, wheelIndex));
         
 
-        const steeringDirection = isKeyDown('a') ? 1 : isKeyDown('d') ? -1 : 0;
+        const steeringDirection = isKeyDown('A') ? 1 : isKeyDown('D') ? -1 : 0;
         [0, 1].forEach(wheelIndex => vehicle.setSteeringValue(maxSteeringValue * steeringDirection, wheelIndex));
 
         const brakeMultiplier = Number(isKeyDown(' '));
