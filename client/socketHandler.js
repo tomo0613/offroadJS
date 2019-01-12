@@ -2,6 +2,10 @@ let socketConnection;
 let onSocketMessage = (message) => console.log('unhandled message', message);
 
 function connectToServer() {
+    if (window.location.host.includes('github')) {
+        console.info('WebSocket connection can only be established on non static servers');
+        return;
+    }
     socketConnection = new WebSocket('ws://' + window.location.host);
 
     socketConnection.addEventListener('open', () => {
