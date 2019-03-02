@@ -4,8 +4,8 @@ export const cameraHelper = {
     update: () => {},
 };
 
-function initCameraHelper(camera, target) {
-    const cameraController = new THREE.OrbitControls(camera/*, gRenderer.domElement*/);
+function initCameraHelper(camera, target, controllerScope) {
+    const cameraController = new THREE.OrbitControls(camera, controllerScope);
 
     let cameraId = 0;
 

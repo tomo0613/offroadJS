@@ -2,21 +2,11 @@
 
 body {
     margin: 0;
-    user-select: none;
+    overflow: hidden;
     background-color: rgb(58, 65, 54);
     font-family: Arial, Helvetica, sans-serif;
-}
-
-body > aside {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 3px;
-    padding: 1em 5em;
-    top: 10vh;
-    left: 50%;
-    transform: translateX(-50%);
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 p {
@@ -37,6 +27,31 @@ canvas {
     display: flex;
     margin: auto;
     border: 1px solid black;
+}
+
+#instructions-container {
+    position: absolute;
+    top: 3em;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 100%;
+    overflow-y: auto;
+}
+
+#instructions {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 3px;
+    padding: 1em 5em 2em 5em;
+    margin-bottom: 2em;
+}
+
+#instructions-close-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    font-size: 2em;
+    padding: 0 0.2em;
 }
 
 .hidden {

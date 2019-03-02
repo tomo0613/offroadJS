@@ -1,16 +1,6 @@
 import controllerSocketHandler from './socketHandler.js';
 
-export default function createVehicle(world, meshes) {
-    world.defaultContactMaterial.friction = 0.001;
-    const groundMaterial = new CANNON.Material('groundMaterial');
-    const wheelMaterial = new CANNON.Material('wheelMaterial');
-    const wheelGroundContactMaterial = new CANNON.ContactMaterial(wheelMaterial, groundMaterial, {
-        friction: 0.5,
-        restitution: 0,
-        contactEquationStiffness: 1000
-    });
-    world.addContactMaterial(wheelGroundContactMaterial);
-
+export default function createVehicle() {
     const chassisBody = new CANNON.Body({mass: Config.vehicle.mass});
     const chassisBaseShape = new CANNON.Box(new CANNON.Vec3(0.9, 0.4, 2.1));
     const chassisTopShape = new CANNON.Box(new CANNON.Vec3(0.9, 0.4, 1.2));
@@ -51,32 +41,27 @@ export default function createVehicle(world, meshes) {
     vehicle.addWheel(wheelOptions);
     wheelOptions.chassisConnectionPointLocal.set(-0.85, -height, 1.35);
     vehicle.addWheel(wheelOptions);
-    vehicle.addToWorld(world);
 
     const wheelBodies = [];
-    const wheelMeshes = [
-        meshes['wheel_front_l'], meshes['wheel_front_r'], meshes['wheel_rear_l'], meshes['wheel_rear_r'],
-    ];
     const wheelOrientation = new CANNON.Quaternion();
     wheelOrientation.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
 
     vehicle.wheelInfos.forEach((wheel) => {
         const wheelShape = new CANNON.Cylinder(wheel.radius, wheel.radius, wheel.radius / 2, 8);
-        const wheelBody = new CANNON.Body({mass: 0});
-        wheelBody.type = CANNON.Body.KINEMATIC;
-        wheelBody.collisionFilterGroup = 0; // turn off collisions
-        wheelBody.addShape(wheelShape, new CANNON.Vec3(), wheelOrientation);
+        const wheelBody = new CANNON.Body({
+            type: CANNON.Body.KINEMATIC,
+            collisionFilterGroup: 0, // turn off collisions
+        });
+        wheelBody.addShape(wheelShape, CANNON.Vec3.ZERO, wheelOrientation);
         wheelBodies.push(wheelBody);
-        world.addBody(wheelBody);
     });
-
-    // Update wheels
+    
     let transform;
     let wheelBody;
-    world.addEventListener('postStep', () => {
-        for (let i = 0; i < vehicle.wheelInfos.length; i++) {
-            vehicle.updateWheelTransform(i);
-            transform = vehicle.wheelInfos[i].worldTransform;
+    function updateVisuals(chassisMesh, wheelMeshes) {
+        for (let i = 0; i < this.wheelInfos.length; i++) {
+            this.updateWheelTransform(i);
+            transform = this.wheelInfos[i].worldTransform;
             wheelBody = wheelBodies[i];
 
             wheelBody.position.copy(transform.position);
@@ -85,14 +70,28 @@ export default function createVehicle(world, meshes) {
             wheelMeshes[i].position.copy(wheelBody.position);
             wheelMeshes[i].quaternion.copy(wheelBody.quaternion);
         }
-        meshes['chassis'].position.copy(chassisBody.position);
-        meshes['chassis'].quaternion.copy(chassisBody.quaternion);
-        meshes['chassis'].translateOnAxis(new THREE.Vector3(0, 0, 1), 0.6);
-    });
+        chassisMesh.position.copy(chassisBody.position);
+        chassisMesh.quaternion.copy(chassisBody.quaternion);
+        chassisMesh.translateOnAxis(new THREE.Vector3(0, 0, 1), 0.6);
+    }
 
-    initControls(vehicle);
+    function beforeAddToWorld(world, meshes) {
+        const wheelMeshes = [
+            meshes['wheel_front_l'], meshes['wheel_front_r'], meshes['wheel_rear_l'], meshes['wheel_rear_r'],
+        ];
+        wheelBodies.forEach(wheelBody => world.addBody(wheelBody));
+        world.addEventListener('postStep', updateVisuals.bind(vehicle, meshes['chassis'], wheelMeshes));    
 
-    const maxAcceleration = 100;
+        initControls(vehicle);
+    }
+
+    const addToWorld = vehicle.addToWorld.bind(vehicle);
+    vehicle.addToWorld = function(world, meshes) {
+        beforeAddToWorld(world, meshes);
+        addToWorld(world);
+    };
+
+    const maxAcceleration = 150;
     const maxSteeringValue = 0.5;
     const maxBrakeForce = 1;
     
@@ -134,7 +133,7 @@ export default function createVehicle(world, meshes) {
     }
 
     function onStateChange() {
-        [0, 1, 2, 3].forEach(wheelIndex => vehicle.applyEngineForce(state.acceleration * -maxAcceleration, wheelIndex));
+        [0, 1, 2, 3].forEach(wheelIndex => vehicle.applyEngineForce(state.acceleration * maxAcceleration, wheelIndex));
     
         [0, 1].forEach(wheelIndex => vehicle.setSteeringValue(state.steeringValue * -1, wheelIndex));
     
@@ -154,7 +153,7 @@ function initControls(vehicle) {
     const keysPressed = new Set();
     const isKeyDown = (key) => keysPressed.has(key);
     const maxSteeringValue = 0.5;
-    const maxForce = 30;
+    const maxForce = 40;
     const brakeForce = 1;
 
     const liftingPoint = new CANNON.Vec3();

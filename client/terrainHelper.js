@@ -22,17 +22,44 @@ const heightMap = [
     [14.64, 14.64, 8.71, 8.71, 8.71, 8.71, 7.63, 8.67, 8.67, 8.67, 11.72, 17.32, 29.1, 35.73, 43.36, 50.49, 52.01, 52.01, 48.96, 50.83, 55.51],
 ];
 
+const groundMaterial = new CANNON.Material('groundMaterial');
+
 export function generateTerrain() {
     const scaledHeightMap = heightMap.map(row => row.map(heightValue => heightValue * 0.5));
     const mapRows = heightMap.length;
     const mapColumns = heightMap[0].length;
     const terrainShape = new CANNON.Heightfield(scaledHeightMap, {elementSize: 5});
-    const terrain = new CANNON.Body({mass: 0, shape: terrainShape});
+    const terrain = new CANNON.Body({mass: 0, shape: terrainShape, material: groundMaterial});
 
     terrain.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
     terrain.position.set(-mapRows * terrainShape.elementSize / 2, 0, mapColumns * terrainShape.elementSize / 2);
 
     return terrain;
+}
+
+export function createPlatform(size, position, rotation = {axis: 'x', angle: 0}) {
+    const platformGeometry = new THREE.BoxGeometry(size.x * 2, size.y * 2, size.z * 2);
+    const platformMesh = new THREE.Mesh(platformGeometry, new THREE.MeshLambertMaterial());
+
+    const platformShape = new CANNON.Box(new CANNON.Vec3(size.x, size.y, size.z));
+    const platformBody = new CANNON.Body({mass: 0, shape: platformShape, material: groundMaterial});
+    const rotationAxis = new CANNON.Vec3();
+    rotationAxis[rotation.axis] = 1;
+
+    platformBody.position.set(position.x, position.y, position.z);
+    platformMesh.position.copy(platformBody.position);
+
+    platformBody.quaternion.setFromAxisAngle(rotationAxis, rotation.angle);
+    platformMesh.quaternion.copy(platformBody.quaternion);
+
+    return {
+        mesh: platformMesh,
+        body: platformBody,
+        append(scene, world) {
+            scene.add(platformMesh);
+            world.addBody(platformBody);
+        },
+    };
 }
 
 const defaultOptions = {

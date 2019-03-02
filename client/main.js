@@ -1,16 +1,16 @@
-import createVehicle from './vehicle.js';
 import * as utils from './utils.js';
-import {generateTerrain, heightFieldToMesh} from './terrainHelper.js';
+import createVehicle from './raycastVehicle.js';
+import {generateTerrain, heightFieldToMesh, createPlatform} from './terrainHelper.js';
 import {cameraHelper} from './cameraHelper.js';
 
 const worldStep = 1/60;
 
 const gWorld = new CANNON.World();
 const gScene = new THREE.Scene();
-const gRenderer = new THREE.WebGLRenderer();
+const gRenderer = new THREE.WebGLRenderer(/*{antialias: true}*/);
 const gCamera = new THREE.PerspectiveCamera(50, getAspectRatio(), 0.1, 1000);
 const gCannonDebugRenderer = new THREE.CannonDebugRenderer(gScene, gWorld);
-let wireFrameRenderer = null;
+let wireframeRenderer = null;
 let pause = false;
 gRenderer.gammaOutput = true;
 
@@ -20,11 +20,17 @@ sunLight.position.set(-1, 100, -1).normalize();
 gScene.add(ambientLight);
 gScene.add(sunLight);
 
-gWorld.gravity.set(...Config.world.gravity);
 gWorld.broadphase = new CANNON.SAPBroadphase(gWorld);
+gWorld.gravity.set(...Config.world.gravity);
+gWorld.defaultContactMaterial.friction = 0.001;
 
+gRenderer.setPixelRatio(window.devicePixelRatio);
 gRenderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(gRenderer.domElement);
+
+const vehicleInitialPosition = new THREE.Vector3(0, 2, 0);
+const vehicleInitialRotation = new THREE.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -Math.PI / 2);
+let resetVehicle = () => {};
 
 (async function init() {
     utils.loadResource('model/skybox.jpg').then((cubeTexture) => {
@@ -52,8 +58,14 @@ document.body.appendChild(gRenderer.domElement);
     };
 
     const terrain = generateTerrain();
-    const vehicle = createVehicle(gWorld, meshes);
-    vehicle.chassisBody.position.y = 2;
+    const vehicle = createVehicle();
+    vehicle.addToWorld(gWorld, meshes);
+
+    resetVehicle = () => {
+        vehicle.chassisBody.position.copy(vehicleInitialPosition);
+        vehicle.chassisBody.quaternion.copy(vehicleInitialRotation);
+    };
+    resetVehicle();
     // mirror meshes suffixed with '_r'
     Object.keys(meshes).forEach((meshName) => {
         if (meshName.split('_')[2] === 'r') {
@@ -61,11 +73,21 @@ document.body.appendChild(gRenderer.domElement);
         }
         gScene.add(meshes[meshName]);
     });
-    
+
+    createPlatform({x: 2, y: 2, z: 2}, {x: 5, y: 0.1, z: 1}, {axis: 'z', angle: Math.PI / 5}).append(gScene, gWorld);
+    // createPlatform({x: 2, y: 2, z: 2}, {x: 12, y: 2, z: 1}).append(gScene, gWorld);
+    // createPlatform({x: 4, y: 2, z: 4}, {x: -1, y: -1, z: 2}).append(gScene, gWorld);
     gWorld.addBody(terrain);
     gScene.add(heightFieldToMesh(terrain));
+
+    // const wheelContactMaterial = new CANNON.ContactMaterial(vehicle.wheelMaterial, terrain.material, {
+    //     friction: 0.9,
+    //     restitution: 0,
+    //     contactEquationStiffness: 1000,
+    // });
+    // gWorld.addContactMaterial(wheelContactMaterial);
     
-    cameraHelper.init(gCamera, chassis);
+    cameraHelper.init(gCamera, chassis, gRenderer.domElement);
 
     render();
 })();
@@ -81,8 +103,8 @@ function render() {
 
     updatePhysics();
 
-    if (wireFrameRenderer) {
-        wireFrameRenderer.update();
+    if (wireframeRenderer) {
+        wireframeRenderer.update();
     }
 
     cameraHelper.update();
@@ -154,8 +176,10 @@ function windowResizeHandler() {
 
 window.onresize = utils.debounce(windowResizeHandler, 500);
 
-let pressedKey;
-const instructions = document.getElementById('instructions');
+const instructionsContainer = document.getElementById('instructions-container');
+const instructionsCloseButton = document.getElementById('instructions-close-button');
+const resolutionController = document.getElementById('resolution-controller');
+const wireframeToggleButton = document.getElementById('wireframe-toggle-button');
 
 window.addEventListener('keyup', (e) => {
     switch (e.key.toUpperCase()) {
@@ -170,19 +194,46 @@ window.addEventListener('keyup', (e) => {
                 render();
             }
             break;
+        case 'R':
+            resetVehicle();
+            break;
         case 'ESCAPE':
-            instructions.classList.toggle('hidden');
+            instructionsContainer.classList.toggle('hidden');
             break;
     }
 });
 
-Object.defineProperty(window, 'showWireFrame', {
-    get() {
-        if (wireFrameRenderer) {
-            wireFrameRenderer.reset();
-            wireFrameRenderer = null;
-        } else {
-            wireFrameRenderer = gCannonDebugRenderer;
-        }
-    },
+instructionsCloseButton.addEventListener('click', () => {
+    instructionsContainer.classList.add('hidden');
 });
+
+instructionsContainer.addEventListener('mousedown', (e) => {
+    console.log('instructions mousedown');
+    e.stopImmediatePropagation;
+    e.stopPropagation;
+});
+
+wireframeToggleButton.addEventListener('click', () => {   
+    if (wireframeRenderer) {
+        wireframeRenderer._meshes.forEach(mesh => gScene.remove(mesh));
+        wireframeRenderer._meshes = [];
+        wireframeRenderer = null;
+    } else {
+        wireframeRenderer = gCannonDebugRenderer;
+    }
+});
+
+(function initResolutionController() {
+    const maxWidth = window.screen.availWidth;
+    const maxHeight = window.screen.availHeight;
+
+    [1/1, 3/4, 1/2, 1/4].forEach(ratio => {
+        const option = document.createElement('option');
+        option.value = ratio;
+        option.innerText = `${Math.floor(maxWidth * ratio)} x ${Math.floor(maxHeight * ratio)}`;
+
+        resolutionController.appendChild(option);
+    });
+
+    resolutionController.addEventListener('change', (e) => gRenderer.setPixelRatio(e.currentTarget.value));
+})();
