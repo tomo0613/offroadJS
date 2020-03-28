@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server/httpServer.js",
-    "client": "browser-sync start --server --startPath './client/' --watch",
+    "client": "npx browser-sync start --server --startPath './client/' --watch",
     "controller": "browser-sync start -s -w --startPath './controller/'",
     "server": "nodemon --ext js --exec 'node server/httpServer.js' ",
     "nodemon": "nodemon --ext js --exec \"node\"",

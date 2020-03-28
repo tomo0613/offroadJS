@@ -91,7 +91,7 @@ export default function createVehicle() {
         addToWorld(world);
     };
 
-    const maxAcceleration = 150;
+    const maxAcceleration = 70;
     const maxSteeringValue = 0.5;
     const maxBrakeForce = 1;
     
@@ -153,7 +153,8 @@ function initControls(vehicle) {
     const keysPressed = new Set();
     const isKeyDown = (key) => keysPressed.has(key);
     const maxSteeringValue = 0.5;
-    const maxForce = 40;
+    const maxForceOnFrontWheels = 70;
+    const maxForceOnRearWheels = 65;
     const brakeForce = 1;
 
     const liftingPoint = new CANNON.Vec3();
@@ -185,8 +186,12 @@ function initControls(vehicle) {
             keysPressed.add(pressedKey);
         }
 
-        const accelerationMultiplier = isKeyDown('W') ? 1 : isKeyDown('S') ? -1 : 0;
-        [0, 1, 2, 3].forEach(wheelIndex => vehicle.applyEngineForce(maxForce * accelerationMultiplier, wheelIndex));
+        const direction = isKeyDown('W') ? 1 : isKeyDown('S') ? -1 : 0;
+
+        // const speed = vehicle.chassisBody.velocity.length();
+        
+        [0, 1].forEach(wheelIndex => vehicle.applyEngineForce(maxForceOnFrontWheels * direction, wheelIndex));
+        [2, 3].forEach(wheelIndex => vehicle.applyEngineForce(maxForceOnRearWheels * direction, wheelIndex));
         
 
         const steeringDirection = isKeyDown('A') ? 1 : isKeyDown('D') ? -1 : 0;

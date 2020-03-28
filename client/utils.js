@@ -13,6 +13,7 @@ function loadResource(url) {
         case 'jpg':
             loader = new THREE.ImageLoader();
             break;
+        case 'glb':
         case 'gltf':
             loader = new THREE.GLTFLoader();
             break;

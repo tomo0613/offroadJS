@@ -115,3 +115,100 @@ export function heightFieldToMesh(body, options = {}) {
 
     return obj;
 }
+
+export function meshToHeightField(mesh) {
+    const geometry = findGeometry(mesh);
+    // positions coordinates are stored in a THREE.Float32BufferAttribute (array buffer [c0.x,c0.y,c0.z,c1.x, ...])
+    const vertices = mapPositionBufferToVertices(geometry.getAttribute('position'));
+    // if the the plane width equals to its length
+    const rowCount = Math.sqrt(vertices.length);
+    const columnCount = rowCount;
+
+    geometry.computeBoundingBox();
+
+    const minX = geometry.boundingBox.min.x;
+    const maxX = geometry.boundingBox.max.x;
+    const minZ = geometry.boundingBox.min.z;
+    const maxZ = geometry.boundingBox.max.z;
+    const gridWidth = maxX - minX;
+    const gridLength = maxZ - minZ;
+    // the scale is bit off, so it needs some adjustment (+ 0.1585)
+    const gridElementSize = gridWidth / columnCount + 0.1585;
+
+    // create grid
+    const grid = [];
+    for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        const row = [];
+
+        for (let columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+            const vertexIndex = rowIndex * rowCount + columnIndex;
+            const vertex = vertices[vertexIndex];
+
+            row.push(vertex.y);
+        }
+
+        grid.push(row);
+    }
+
+    // create heightField from grid
+    const heightFieldShape = new CANNON.Heightfield(grid, {elementSize: gridElementSize});
+    const heightField = new CANNON.Body({mass: 0, shape: heightFieldShape});
+
+    const q1 = new THREE.Quaternion();
+    q1.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), -Math.PI / 2);
+    const q = new THREE.Quaternion();
+    q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+    q.multiply(q1);
+
+    heightField.quaternion.copy(q);
+    heightField.position.set(
+        -gridWidth / 2,
+        0,
+        gridLength / 2 - gridLength,
+    );
+
+    return heightField;
+
+    function findGeometry(mesh) {
+        let geometry;
+
+        mesh.traverse((child) => {
+            if (!geometry && child.type === 'Mesh' && child.geometry) {
+                geometry = child.geometry;
+            }
+        });
+
+        return geometry;
+    }
+
+    function mapPositionBufferToVertices(positionBuffer) {
+        const vertexArray = [];
+        const vertexCount = positionBuffer.count;
+
+        for (let i = 0; i < vertexCount; i++) {        
+            vertexArray.push(new THREE.Vector3(
+                positionBuffer.getX(i),
+                positionBuffer.getY(i),
+                positionBuffer.getZ(i),
+            ));
+        }
+        // vertices in a mesh are not in order, sort them by x & z position
+        vertexArray.sort((a, b) => {
+            if (a.z === b.z) {
+                return (a.x < b.x) ? -1 : (a.x > b.x) ? 1 : 0;
+            } else {
+                return (a.z < b.z) ? -1 : 1;
+            }
+        });
+        // filter duplicated vertices
+        return vertexArray.filter((vertex, index) => {
+            const nextVertex = vertexArray[index + 1];
+            const duplicated = nextVertex 
+                && vertex.x === nextVertex.x
+                && vertex.y === nextVertex.y
+                && vertex.z === nextVertex.z;
+
+            return !duplicated;
+        });
+    }
+}
