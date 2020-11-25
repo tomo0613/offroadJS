@@ -41,23 +41,25 @@ function initCameraHelper(camera, target, controllerScope) {
     cameraHelper.switch();
 }
 
-function getChaseCamera(params) {
-    // ToDo memo
-}
-
 function initChaseCamera(camera, target) {
-    const cameraTargetPosition = new THREE.Vector3();
-    const cameraOffset = new THREE.Vector3();
-    const rotationMatrix = new THREE.Matrix4();
+    const cameraMovementSpeed = 0.05; 
+    const cameraLookPositionHeightOffset = 5;
+    const cameraMountPosition = new THREE.Vector3();
+    const cameraLookPosition = new THREE.Vector3();
+    const chaseCameraMountPositionHelper = new THREE.Object3D();
+    chaseCameraMountPositionHelper.position.set(0, 8, 15);
+    target.add(chaseCameraMountPositionHelper);
 
     return () => {
-        cameraOffset.set(0, 3, 10);
-        rotationMatrix.makeRotationFromQuaternion(target.quaternion);
-    
-        cameraOffset.applyMatrix4(rotationMatrix);
-        cameraTargetPosition.copy(target.position).add(cameraOffset);
-    
-        camera.position.lerp(cameraTargetPosition, 0.1);
-        camera.lookAt(target.position);
+        chaseCameraMountPositionHelper.getWorldPosition(cameraMountPosition);
+
+        if (cameraMountPosition.y < target.position.y) {
+            cameraMountPosition.setY(target.position.y);
+        }
+
+        camera.position.lerp(cameraMountPosition, cameraMovementSpeed);
+        cameraLookPosition.copy(target.position).y += cameraLookPositionHeightOffset;
+
+        camera.lookAt(cameraLookPosition);
     };
 }

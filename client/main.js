@@ -1,6 +1,6 @@
 import * as utils from './utils.js';
 import createVehicle from './raycastVehicle.js';
-import {meshToHeightField, createPlatform} from './terrainHelper.js';
+import {generateHeightfieldFromMesh, generateTerrain} from './terrainHelper.js';
 import {cameraHelper} from './cameraHelper.js';
 
 const worldStep = 1/60;
@@ -28,7 +28,7 @@ gRenderer.setPixelRatio(window.devicePixelRatio);
 gRenderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(gRenderer.domElement);
 
-const vehicleInitialPosition = new THREE.Vector3(250, 5, 250);
+const vehicleInitialPosition = new THREE.Vector3(70, 2, 60);
 const vehicleInitialRotation = new THREE.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, -1, 0), -Math.PI / 2);
 let resetVehicle = () => {};
 
@@ -46,9 +46,10 @@ let resetVehicle = () => {};
     ]);
     
     const terrain = terrainGLB.scene;
-    const heightField = meshToHeightField(terrain);
 
     gScene.add(terrain);
+    const heightField = generateTerrain();
+    // const heightField = await generateHeightfieldFromMesh(terrain, 1.475);
     gWorld.addBody(heightField);
 
     const wheel = wheelGLTF.scene;
@@ -83,15 +84,6 @@ let resetVehicle = () => {};
         gScene.add(meshes[meshName]);
     });
 
-    createPlatform({x: 2, y: 2, z: 2}, {x: 250, y: 0.1, z: 260}, {axis: 'z', angle: Math.PI / 5}).append(gScene, gWorld);
-
-    // const wheelContactMaterial = new CANNON.ContactMaterial(vehicle.wheelMaterial, terrain.material, {
-    //     friction: 0.9,
-    //     restitution: 0,
-    //     contactEquationStiffness: 1000,
-    // });
-    // gWorld.addContactMaterial(wheelContactMaterial);
-    
     cameraHelper.init(gCamera, chassis, gRenderer.domElement);
 
     render();
